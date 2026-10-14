@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>单摆简谐振动模拟器 · 南昌大学物理实验</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; }
+  body {
+    background: #1a1a24;
+    font-family: 'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif;
+    color: #cbd5e1;
+  }
+  #stage { display: block; width: 100vw; height: 100vh; }
+
+  .hud {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    padding: 14px 18px;
+    border: 1px solid rgba(79, 209, 255, 0.25);
+    border-radius: 12px;
+    background: rgba(16, 20, 32, 0.72);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 0 24px rgba(0, 0, 0, 0.45), inset 0 0 18px rgba(79, 209, 255, 0.05);
+    font-size: 13px;
+    line-height: 1.9;
+    letter-spacing: 0.3px;
+    pointer-events: none;
+    user-select: none;
+  }
+  .hud h1 {
+    font-size: 13px;
+    font-weight: 600;
+    color: #4fd1ff;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+  .hud .row { display: flex; justify-content: space-between; gap: 26px; }
+  .hud .k { color: #64748b; }
+  .hud .v { color: #e2e8f0; font-variant-numeric: tabular-nums; }
+  .hud .v.accent { color: #7dd3fc; }
+  .hint {
+    position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+    font-size: 12px; color: #55627a; letter-spacing: 0.5px; user-select: none;
+  }
+</style>
+</head>
+<body>
+  <canvas id="stage"></canvas>
+
+  <div class="hud">
+    <h1>Pendulum · 单摆简谐振动</h1>
+    <div class="row"><span class="k">摆长 L</span><span class="v">200 px</span></div>
+    <div class="row"><span class="k">重力 g</span><span class="v">9.8 m/s²</span></div>
+    <div class="row"><span class="k">初始摆角 θ₀</span><span class="v">45.0°</span></div>
+    <div class="row"><span class="k">实时光角 θ</span><span class="v accent" id="hud-theta">45.0°</span></div>
+    <div class="row"><span class="k">理论周期 T</span><span class="v accent" id="hud-period">--</span></div>
+  </div>
+
+  <div class="hint">点击画面可重置为初始摆角</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var canvas = document.getElementById('stage');
+  var ctx = canvas.getContext('2d');
+  var hudTheta = document.getElementById('hud-theta');
+  var hudPeriod = document.getElementById('hud-period');
+
+  // ---------- 物理参数（题目给定） ----------
+  var L = 200;                     // 摆长，单位 px
+  var g = 9.8;                     // 重力加速度，单位 m/s²
+  var PPM = 100;                   // 比例尺：1 米 = 100 像素
+  var gPx = g * PPM;               // 换算为像素单位：980 px/s²
+  var THETA0 = 45 * Math.PI / 180; // 初始摆角 45°
+
+  // 理论周期 T = 2π√(L / g)（L、g 同为像素单位）
+  var PERIOD = 2 * Math.PI * Math.sqrt(L / gPx);
+  hudPeriod.textContent = PERIOD.toFixed(2) + ' s';
+
+  // ---------- 状态 ----------
+  var theta = THETA0;   // 当前摆角（弧度）
+  var omega = 0;        // 角速度 rad/s
+
+  var trail = [];       // 摆球轨迹
+  var TRAIL_MAX = 42;
+
+  var W = 0, H = 0, pivotX = 0, pivotY = 0, dpr = 1;
+  var ballR = 18;
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    pivotX = W / 2;
+    pivotY = Math.min(H * 0.16, 150);
+    // 保证摆长可视化后仍在画面内
+    ballR = Math.max(12, Math.min(20, L / 11));
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // ---------- 物理积分（半隐式欧拉 + 子步长，保证稳定） ----------
+  function stepPhysics(dt) {
+    var SUB = 8;
+    var h = dt / SUB;
+    for (var i = 0; i < SUB; i++) {
+      // 非线性单摆方程：d²θ/dt² = -(g/L)·sinθ
+      var alpha = -(gPx / L) * Math.sin(theta);
+      omega += alpha * h;
+      theta += omega * h;
+    }
+  }
+
+  // ---------- 绘制辅助 ----------
+  function drawBackground() {
+    // 深灰科技色底
+    ctx.fillStyle = '#1a1a24';
+    ctx.fillRect(0, 0, W, H);
+
+    // 顶部径向微光
+    var glow = ctx.createRadialGradient(pivotX, pivotY, 0, pivotX, pivotY, Math.max(W, H) * 0.7);
+    glow.addColorStop(0, 'rgba(79, 209, 255, 0.07)');
+    glow.addColorStop(0.45, 'rgba(79, 209, 255, 0.02)');
+    glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, W, H);
+
+    // 轻科技网格
+    ctx.strokeStyle = 'rgba(120, 160, 220, 0.045)';
+    ctx.lineWidth = 1;
+    var gap = 46;
+    ctx.beginPath();
+    for (var x = 0; x <= W; x += gap) { ctx.moveTo(x + 0.5, 0); ctx.lineTo(x + 0.5, H); }
+    for (var y = 0; y <= H; y += gap) { ctx.moveTo(0, y + 0.5); ctx.lineTo(W, y + 0.5); }
+    ctx.stroke();
+  }
+
+  function ballPos(th) {
+    return {
+      x: pivotX + L * Math.sin(th),
+      y: pivotY + L * Math.cos(th)
+    };
+  }
+
+  function drawArcGuide() {
+    // 摆球可达圆弧轨迹
+    ctx.save();
+    ctx.strokeStyle = 'rgba(79, 209, 255, 0.10)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 6]);
+    ctx.beginPath();
+    ctx.arc(pivotX, pivotY, L, Math.PI / 2 - 1.1, Math.PI / 2 + 1.1);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawTrail() {
+    if (trail.length < 2) return;
+    ctx.save();
+    ctx.lineCap = 'round';
+    for (var i = 1; i < trail.length; i++) {
+      var a = i / trail.length;
+      ctx.strokeStyle = 'rgba(79, 209, 255, ' + (a * 0.35).toFixed(3) + ')';
+      ctx.lineWidth = a * 3.2;
+      ctx.beginPath();
+      ctx.moveTo(trail[i - 1].x, trail[i - 1].y);
+      ctx.lineTo(trail[i].x, trail[i].y);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawRodAndPivot(p) {
+    // 摆线
+    ctx.save();
+    var rodGrad = ctx.createLinearGradient(pivotX, pivotY, p.x, p.y);
+    rodGrad.addColorStop(0, 'rgba(148, 163, 184, 0.55)');
+    rodGrad.addColorStop(1, 'rgba(79, 209, 255, 0.85)');
+    ctx.strokeStyle = rodGrad;
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(pivotX, pivotY);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+    ctx.restore();
+
+    // 悬点基座
+    ctx.save();
+    ctx.shadowColor = 'rgba(79, 209, 255, 0.8)';
+    ctx.shadowBlur = 12;
+    ctx.fillStyle = '#8fb8d8';
+    ctx.beginPath();
+    ctx.arc(pivotX, pivotY, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // 支架横梁
+    ctx.save();
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.35)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(pivotX - 46, pivotY - 14);
+    ctx.lineTo(pivotX + 46, pivotY - 14);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawAngle(p) {
+    // 竖直参考虚线
+    ctx.save();
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.18)';
+    ctx.setLineDash([3, 5]);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(pivotX, pivotY);
+    ctx.lineTo(pivotX, pivotY + L + 30);
+    ctx.stroke();
+
+    // 角弧
+    ctx.setLineDash([]);
+    ctx.strokeStyle = 'rgba(125, 211, 252, 0.45)';
+    ctx.lineWidth = 1.5;
+    var start = Math.PI / 2;                 // 竖直向下
+    var end = Math.PI / 2 - theta;           // 指向摆球
+    ctx.beginPath();
+    ctx.arc(pivotX, pivotY, 58, Math.min(start, end), Math.max(start, end));
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawBall(p) {
+    // 外层柔和光晕
+    ctx.save();
+    var halo = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, ballR * 3.4);
+    halo.addColorStop(0, 'rgba(79, 209, 255, 0.42)');
+    halo.addColorStop(0.4, 'rgba(79, 209, 255, 0.12)');
+    halo.addColorStop(1, 'rgba(79, 209, 255, 0)');
+    ctx.fillStyle = halo;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, ballR * 3.4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // 摆球本体（带阴影发光）
+    ctx.save();
+    ctx.shadowColor = 'rgba(79, 209, 255, 0.95)';
+    ctx.shadowBlur = 26;
+    var body = ctx.createRadialGradient(
+      p.x - ballR * 0.35, p.y - ballR * 0.4, ballR * 0.15,
+      p.x, p.y, ballR
+    );
+    body.addColorStop(0, '#ffffff');
+    body.addColorStop(0.35, '#bde9ff');
+    body.addColorStop(0.75, '#4fd1ff');
+    body.addColorStop(1, '#1f8fc4');
+    ctx.fillStyle = body;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, ballR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // 高光点
+    ctx.save();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.beginPath();
+    ctx.arc(p.x - ballR * 0.34, p.y - ballR * 0.38, ballR * 0.24, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function render() {
+    drawBackground();
+    drawArcGuide();
+    var p = ballPos(theta);
+    drawAngle(p);
+    drawTrail();
+    drawRodAndPivot(p);
+    drawBall(p);
+  }
+
+  // ---------- 动画循环 ----------
+  var last = 0;
+  function loop(now) {
+    if (!last) last = now;
+    var dt = (now - last) / 1000;
+    last = now;
+    if (dt > 0.05) dt = 0.05;      // 防止切后台回来后跳变
+
+    stepPhysics(dt);
+
+    var p = ballPos(theta);
+    trail.push(p);
+    if (trail.length > TRAIL_MAX) trail.shift();
+
+    var deg = theta * 180 / Math.PI;
+    hudTheta.textContent = deg.toFixed(1) + '°';
+
+    render();
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  // ---------- 点击重置 ----------
+  canvas.addEventListener('click', function () {
+    theta = THETA0;
+    omega = 0;
+    trail.length = 0;
+  });
+})();
+</script>
+</body>
+</html>

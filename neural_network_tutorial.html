@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>神经网络原理 · 交互式动画教程</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#060912;--panel:#0c1120;--panel2:#0e1426;--border:#1b2340;
+  --txt:#c3cde0;--dim:#5c6a85;--green:#34d399;--blue:#38bdf8;
+  --purple:#a78bfa;--pink:#f472b6;--amber:#fbbf24;--red:#fb7185;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);overflow-x:hidden;line-height:1.6}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:#222b4a;border-radius:4px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;padding:40px 20px;overflow:hidden}
+.hero .bg-net{position:absolute;inset:0;opacity:.12}
+.hero h1{font-size:clamp(2rem,6vw,3.6rem);font-weight:800;text-align:center;background:linear-gradient(90deg,#34d399,#38bdf8,#a78bfa,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-.02em}
+.hero .sub{margin-top:16px;color:var(--dim);font-size:1.1rem;text-align:center}
+.hero .cta{margin-top:40px;display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
+.btn{padding:14px 30px;border-radius:30px;font-size:1rem;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--panel);color:var(--txt);transition:.3s}
+.btn:hover{transform:translateY(-2px);border-color:var(--blue);box-shadow:0 8px 30px rgba(56,189,248,.15)}
+.btn.primary{background:linear-gradient(135deg,#38bdf8,#a78bfa);border:none;color:#fff}
+.btn.primary:hover{box-shadow:0 8px 30px rgba(167,139,250,.4)}
+
+/* SECTIONS */
+section{padding:90px 20px;max-width:1150px;margin:0 auto;position:relative}
+section .head{margin-bottom:48px}
+section .kicker{color:var(--blue);font-size:.85rem;letter-spacing:.15em;text-transform:uppercase;font-weight:600}
+section h2{font-size:clamp(1.6rem,4vw,2.4rem);font-weight:700;margin-top:6px}
+section .lead{color:var(--dim);margin-top:12px;max-width:640px;font-size:1.02rem}
+
+.canvas-wrap{position:relative;background:var(--panel);border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.canvas-wrap canvas{display:block;width:100%;height:auto}
+.canvas-wrap .caption{position:absolute;bottom:14px;left:0;right:0;text-align:center;color:var(--dim);font-size:.8rem;pointer-events:none}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:32px}
+@media(max-width:820px){.grid2{grid-template-columns:1fr}}
+.info-card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:26px}
+.info-card h3{font-size:1.1rem;margin-bottom:12px;display:flex;align-items:center;gap:9px}
+.info-card h3 .n{width:24px;height:24px;border-radius:7px;background:linear-gradient(135deg,#38bdf8,#a78bfa);display:inline-flex;align-items:center;justify-content:center;font-size:.8rem;color:#fff;flex-shrink:0}
+.info-card p{color:var(--dim);font-size:.92rem}
+.info-card .hl{color:var(--green);font-weight:600}
+.info-card .hl2{color:var(--blue);font-weight:600}
+.info-card .hl3{color:var(--purple);font-weight:600}
+.info-card .hl4{color:var(--pink);font-weight:600}
+.formula{background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:13px 16px;margin:14px 0;font-family:'Consolas','Courier New',monospace;color:var(--green);font-size:.92rem;text-align:center;overflow-x:auto;white-space:nowrap}
+
+.controls-bar{display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-top:18px}
+.slider-row{display:flex;align-items:center;gap:10px;flex:1;min-width:180px}
+.slider-row label{color:var(--dim);font-size:.8rem;min-width:70px}
+.slider-row input[type=range]{flex:1;-webkit-appearance:none;height:4px;background:#232c4d;border-radius:2px;outline:none;cursor:pointer}
+.slider-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--purple);cursor:pointer;box-shadow:0 0 8px rgba(167,139,250,.5)}
+.slider-row .val{color:var(--blue);font-family:monospace;font-size:.82rem;min-width:34px;text-align:right}
+
+.tag{display:inline-block;padding:3px 10px;border-radius:12px;font-size:.72rem;font-weight:600;margin-left:6px}
+.tag.g{background:rgba(52,211,153,.15);color:var(--green)}
+.tag.b{background:rgba(56,189,248,.15);color:var(--blue)}
+.tag.p{background:rgba(167,139,250,.15);color:var(--purple)}
+.tag.r{background:rgba(251,113,133,.15);color:var(--red)}
+
+table{width:100%;border-collapse:collapse;margin-top:14px;font-size:.85rem}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)}
+th{color:var(--dim);font-weight:600}
+td{color:var(--txt)}
+
+footer{text-align:center;padding:50px 20px;color:var(--dim);font-size:.85rem;border-top:1px solid var(--border)}
+.fade-in{opacity:0;transform:translateY(30px);transition:opacity .7s,transform .7s}
+.fade-in.show{opacity:1;transform:none}
+</style>
+</head>
+<body>
+
+<!-- ===================== HERO ===================== -->
+<div class="hero">
+  <canvas id="heroCanvas" class="bg-net"></canvas>
+  <h1>神经网络原理</h1>
+  <p class="sub">一份可交互、可动手训练的可视化动画教程 —— 从单个神经元到深度学习</p>
+  <div class="cta">
+    <button class="btn primary" onclick="document.getElementById('s1').scrollIntoView({behavior:'smooth'})">开始学习</button>
+    <button class="btn" onclick="document.getElementById('live').scrollIntoView({behavior:'smooth'})">直接看实时训练</button>
+  </div>
+</div>
+
+<!-- ===================== S1 生物神经元 ===================== -->
+<section id="s1">
+  <div class="head">
+    <div class="kicker">Part 01 · 起源</div>
+    <h2>从生物神经元到人工神经元</h2>
+    <p class="lead">人工神经网络的灵感来自大脑。理解生物神经元如何工作，是理解人工神经元的最佳起点。</p>
+  </div>
+  <div class="canvas-wrap">
+    <canvas id="c1" width="1100" height="420"></canvas>
+    <div class="caption">生物神经元结构 —— 信号从树突流入，超过阈值后在轴突输出</div>
+  </div>
+  <div class="grid2">
+    <div class="info-card fade-in">
+      <h3><span class="n">1</span>生物神经元如何工作</h3>
+      <p><span class="hl">树突</span>接收来自其它神经元的信号，<span class="hl2">细胞体</span>将信号求和。当总输入超过<span class="hl4">阈值</span>时，神经元被激活，通过<span class="hl3">轴突</span>把信号传递给下一个神经元。</p>
+      <p style="margin-top:10px">这种「<span class="hl">收集 → 加权求和 → 阈值判断 → 发放</span>」的机制，正是人工神经元的原型。</p>
+    </div>
+    <div class="info-card fade-in">
+      <h3><span class="n">2</span>关键类比</h3>
+      <table>
+        <tr><th>生物概念</th><th>人工神经网络</th></tr>
+        <tr><td>树突</td><td>输入 x₁, x₂, ...</td></tr>
+        <tr><td>突触强度</td><td>权重 w₁, w₂, ...</td></tr>
+        <tr><td>细胞体求和</td><td>加权求和 Σwᵢxᵢ</td></tr>
+        <tr><td>阈值 / 发放</td><td>偏置 b + 激活函数</td></tr>
+        <tr><td>轴突输出</td><td>输出 y</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== S2 感知机 ===================== -->
+<section id="s2">
+  <div class="head">
+    <div class="kicker">Part 02 · 最小单元</div>
+    <h2>感知机：一个人工神经元</h2>
+    <p class="lead">1958 年，Rosenblatt 提出感知机。它把输入加权求和，加上偏置，再经过激活函数。</p>
+  </div>
+  <div class="canvas-wrap">
+    <canvas id="c2" width="1100" height="400"></canvas>
+    <div class="caption">脉冲沿连接流入神经元 —— 每个输入乘上它的权重，再加偏置，经激活函数输出</div>
+  </div>
+  <div class="grid2">
+    <div class="info-card fade-in">
+      <h3><span class="n">1</span>数学公式</h3>
+      <div class="formula">z = w₁x₁ + w₂x₂ + w₃x₃ + b</div>
+      <div class="formula">y = f(z)</div>
+      <p><span class="hl2">权重 w</span> 表示每个输入的重要性，<span class="hl3">偏置 b</span> 让输出在没有输入时也有一个基础值，<span class="hl4">激活函数 f</span> 引入非线性。</p>
+    </div>
+    <div class="info-card fade-in">
+      <h3><span class="n">2</span>感知机能做什么</h3>
+      <p>感知机能学习<span class="hl">线性可分</span>的问题：</p>
+      <p style="margin-top:8px">✅ 逻辑与 (AND)<br>✅ 逻辑或 (OR)<br>❌ 异或 (XOR) —— 需要多层网络</p>
+      <p style="margin-top:10px">单个神经元只能用一条直线把数据分成两类；对于 XOR 这种非线性问题，必须叠加多个神经元，这引出了<span class="hl3">多层网络</span>。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== S3 激活函数 ===================== -->
+<section id="s3">
+  <div class="head">
+    <div class="kicker">Part 03 · 非线性</div>
+    <h2>激活函数</h2>
+    <p class="lead">没有激活函数，无论堆多少层，网络本质上仍是线性变换。激活函数赋予了网络拟合任意复杂函数的能力。</p>
+  </div>
+  <div class="canvas-wrap">
+    <canvas id="c3" width="1100" height="400"></canvas>
+    <div class="caption">拖动滑块观察不同 x 值下各激活函数的输出</div>
+  </div>
+  <div class="controls-bar" style="max-width:600px;margin-left:auto;margin-right:auto">
+    <div class="slider-row">
+      <label>输入 x</label>
+      <input type="range" id="actX" min="-6" max="6" step="0.05" value="1.0">
+      <span class="val" id="actXv">1.00</span>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="info-card fade-in">
+      <h3><span class="n">1</span>常见激活函数</h3>
+      <div class="formula">Sigmoid σ(x)=1/(1+e⁻ˣ) → (0,1)</div>
+      <div class="formula">Tanh = (eˣ−e⁻ˣ)/(eˣ+e⁻ˣ) → (−1,1)</div>
+      <div class="formula">ReLU = max(0,x) → [0,+∞)</div>
+      <div class="formula">Leaky ReLU = max(0.01x,x)</div>
+    </div>
+    <div class="info-card fade-in">
+      <h3><span class="n">2</span>如何选择</h3>
+      <p><span class="hl2">ReLU</span> 是隐藏层的默认选择：计算快、缓解梯度消失。<span class="tag b">推荐</span></p>
+      <p><span class="hl">Sigmoid</span> 输出 (0,1)，适合二分类输出层。<span class="tag g">分类</span></p>
+      <p><span class="hl3">Tanh</span> 输出以 0 为中心，常用于 RNN。</p>
+      <p><span class="hl4">Leaky ReLU</span> 解决 ReLU 的「死神经元」问题。</p>
+      <p style="margin-top:10px">输出层选择：回归 → 线性；二分类 → Sigmoid；多分类 → Softmax。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== S4 网络结构 ===================== -->
+<section id="s4">
+  <div class="head">
+    <div class="kicker">Part 04 · 堆叠</div>
+    <h2>多层神经网络</h2>
+    <p class="lead">把神经元组织成层，再把多层堆叠，就构成多层感知机 (MLP)。「深度」指的是隐藏层的数量。</p>
+  </div>
+  <div class="canvas-wrap">
+    <canvas id="c4" width="1100" height="440"></canvas>
+    <div class="caption">输入层 → 隐藏层 → 输出层，全连接网络</div>
+  </div>
+  <div class="controls-bar" style="max-width:600px;margin-left:auto;margin-right:auto">
+    <div class="slider-row">
+      <label>隐藏层神经元</label>
+      <input type="range" id="hiddenN" min="2" max="9" step="1" value="5">
+      <span class="val" id="hiddenNv">5</span>
+    </div>
+    <div class="slider-row">
+      <label>隐藏层数量</label>
+      <input type="range" id="hiddenL" min="1" max="3" step="1" value="1">
+      <span class="val" id="hiddenLv">1</span>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="info-card fade-in">
+      <h3><span class="n">1</span>层的角色</h3>
+      <p><span class="hl2">输入层</span>：接收原始特征（像素、数值…）。</p>
+      <p><span class="hl3">隐藏层</span>：逐层提取更抽象的特征。</p>
+      <p><span class="hl4">输出层</span>：产生预测结果。</p>
+      <p style="margin-top:10px">层与层之间每个神经元都与下一层所有神经元相连，称为<span class="hl">全连接层 (Dense)</span>。</p>
+    </div>
+    <div class="info-card fade-in">
+      <h3><span class="n">2</span>万能近似定理</h3>
+      <p>一个隐藏层足够宽的网络，可以<span class="hl">以任意精度近似任意连续函数</span>。层数越深、神经元越多，模型容量越大，能表达的模式越复杂 —— 但也越容易<span class="hl4">过拟合</span>。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== S5 前向传播 ===================== -->
+<section id="s5">
+  <div class="head">
+    <div class="kicker">Part 05 · 计算</div>
+    <h2>前向传播</h2>
+    <p class="lead">数据从输入层流向输出层，每层执行「加权求和 → 加偏置 → 激活」，这就是一次预测。</p>
+  </div>
+  <div class="canvas-wrap">
+    <canvas id="c5" width="1100" height="430"></canvas>
+    <div class="caption">脉冲代表数据从输入流向输出，节点亮度代表激活强度</div>
+  </div>
+  <div class="grid2">
+    <div class="info-card fade-in">
+      <h3><span class="n">1</span>逐层计算</h3>
+      <div class="formula">z⁽¹⁾ = W⁽¹⁾x + b⁽¹⁾ , a⁽¹⁾ = ReLU(z⁽¹⁾)</div>
+      <div class="formula">z⁽²⁾ = W⁽²⁾a⁽¹⁾ + b⁽²⁾ , ŷ = σ(z⁽²⁾)</div>
+      <p>每一层输出作为下一层输入。整个过程只是<span class="hl2">矩阵乘法 + 加法 + 非线性</span>。</p>
+    </div>
+    <div class="info-card fade-in">
+      <h3><span class="n">2</span>为什么能学习</h3>
+      <p>权重 <span class="hl">W</span> 和偏置 <span class="hl">b</span> 是可学习的参数。训练的目标就是找到一组参数，让网络对输入给出正确的输出 —— 这需要<span class="hl3">损失函数</span>和<span class="hl4">反向传播</span>。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== S6 损失函数 ===================== -->
+<section id="s6">
+  <div class="head">
+    <div class="kicker">Part 06 · 目标</div>
+    <h2>损失函数：衡量「错得有多离谱」</h2>
+    <p class="lead">损失函数量化预测与真实值的差距。训练就是不断缩小这个差距。</p>
+  </div>
+  <div class="canvas-wrap">
+    <canvas id="c6" width="1100" height="400"></canvas>
+    <div class="caption">损失曲面 —— 最低点对应最优参数</div>
+  </div>
+  <div class="grid2">
+    <div class="info-card fade-in">
+      <h3><span class="n">1</span>常用损失</h3>
+      <div class="formula">MSE: L = ½Σ(ŷᵢ−yᵢ)² <span class="hl2">(回归)</span></div>
+      <div class="formula">交叉熵: L = −Σ yᵢlog(ŷᵢ) <span class="hl">(分类)</span></div>
+      <p>回归任务用 MSE；分类任务用交叉熵（配合 Softmax）。</p>
+    </div>
+    <div class="info-card fade-in">
+      <h3><span class="n">2</span>直觉</h3>
+      <p>想象在参数空间中有一片「地形」，损失函数告诉我们当前位置的<span class="hl4">海拔</span>。我们的目标是走到<span class="hl">最低点</span>。方向由<span class="hl3">梯度</span>给出 —— 梯度指向上升最快的方向，所以沿<span class="hl2">负梯度</span>走就能下山。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== S7 反向传播 ===================== -->
+<section id="s7">
+  <div class="head">
+    <div class="kicker">Part 07 · 学习</div>
+    <h2>反向传播与链式法则</h2>
+    <p class="lead">反向传播高效地计算每个权重对损失的贡献（梯度），让我们知道该如何调整它们。</p>
+  </div>
+  <div class="canvas-wrap">
+    <canvas id="c7" width="1100" height="430"></canvas>
+    <div class="caption">蓝色脉冲前向传播，粉色脉冲反向回传梯度</div>
+  </div>
+  <div class="grid2">
+    <div class="info-card fade-in">
+      <h3><span class="n">1</span>链式法则</h3>
+      <div class="formula">∂L/∂w = ∂L/∂ŷ · ∂ŷ/∂z · ∂z/∂w</div>
+      <p>梯度从输出层逐层<span class="hl4">反向</span>传递。每经过一个连接，梯度乘上该处的局部导数，从而把误差「分配」给每一个权重。</p>
+    </div>
+    <div class="info-card fade-in">
+      <h3><span class="n">2</span>为什么高效</h3>
+      <p>如果不反向传播，要计算 100 万个权重各自的梯度，需要约 100 万次前向传播。反向传播利用中间结果复用，<span class="hl">只需一次前向 + 一次反向</span>即可算完所有梯度。这正是深度学习能训练千万参数网络的关键。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== S8 梯度下降 ===================== -->
+<section id="s8">
+  <div class="head">
+    <div class="kicker">Part 08 · 优化</div>
+    <h2>梯度下降：沿负梯度方向下山</h2>
+    <p class="lead">知道了梯度，就可以更新参数。学习率决定了每步走多远。</p>
+  </div>
+  <div class="canvas-wrap">
+    <canvas id="c8" width="1100" height="400"></canvas>
+    <div class="caption">小球沿损失曲面滚向最低点 —— 步长由学习率控制</div>
+  </div>
+  <div class="controls-bar" style="max-width:600px;margin-left:auto;margin-right:auto">
+    <div class="slider-row">
+      <label>学习率 η</label>
+      <input type="range" id="lr" min="0.01" max="1.0" step="0.01" value="0.25">
+      <span class="val" id="lrv">0.25</span>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="info-card fade-in">
+      <h3><span class="n">1</span>更新规则</h3>
+      <div class="formula">w ← w − η · ∂L/∂w</div>
+      <p><span class="hl">学习率 η</span> 太大 → 震荡甚至发散；太小 → 收敛缓慢。</p>
+    </div>
+    <div class="info-card fade-in">
+      <h3><span class="n">2</span>三种变体</h3>
+      <p><span class="hl2">批量(BGD)</span>：用全部数据，稳定但慢。</p>
+      <p><span class="hl3">随机(SGD)</span>：用单个样本，快但噪声大。</p>
+      <p><span class="hl">小批量(Mini-batch)</span>：折中，最常用。<span class="tag g">推荐</span></p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== S9 实时训练 DEMO ===================== -->
+<section id="live">
+  <div class="head">
+    <div class="kicker">Part 09 · 动手体验</div>
+    <h2>实时训练一个神经网络</h2>
+    <p class="lead">一个真实的神经网络正在你眼前学习。它要把平面上两团点分开 —— 观察决策边界如何从混乱到清晰，以及损失如何下降。</p>
+  </div>
+  <div class="canvas-wrap">
+    <canvas id="c9" width="1100" height="520"></canvas>
+    <div class="caption">左：决策边界随训练逐渐成形 · 右：损失曲线下降</div>
+  </div>
+  <div class="controls-bar" style="max-width:900px;margin-left:auto;margin-right:auto;flex-wrap:wrap">
+    <button class="btn" id="btnReset" style="padding:10px 22px;font-size:.9rem">⟲ 重置训练</button>
+    <button class="btn" id="btnPause" style="padding:10px 22px;font-size:.9rem">⏸ 暂停</button>
+    <div class="slider-row" style="min-width:220px">
+      <label>训练速度</label>
+      <input type="range" id="speed" min="1" max="20" step="1" value="5">
+      <span class="val" id="speedv">5</span>
+    </div>
+    <div class="slider-row" style="min-width:220px">
+      <label>学习率 η</label>
+      <input type="range" id="lrLive" min="0.01" max="1" step="0.01" value="0.3">
+      <span class="val" id="lrLivev">0.30</span>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="info-card fade-in">
+      <h3><span class="n">1</span>你在看什么</h3>
+      <p>这是一个 <span class="hl">2-6-1</span> 结构的网络（2 输入、6 隐藏、1 输出，隐藏层用 ReLU，输出用 Sigmoid）。</p>
+      <p style="margin-top:8px">输入是点的 (x,y) 坐标，输出是它属于某一类的概率。背景颜色就是网络的预测 —— 随着训练，决策边界不断调整，最终把两类分开。</p>
+    </div>
+    <div class="info-card fade-in">
+      <h3><span class="n">2</span>观察要点</h3>
+      <p>• 训练初期边界接近直线（线性），随后开始<span class="hl2">弯曲</span> —— 这是隐藏层 + 非线性在起作用。</p>
+      <p>• 损失曲线快速下降后趋于平稳。</p>
+      <p>• 调整<span class="hl4">学习率</span>，观察过大时的震荡、过小时的缓慢。</p>
+      <p>• 这就是梯度下降 + 反向传播在真实工作。</p>
+    </div>
+  </div>
+</section>
+
+<footer>神经网络原理 · 交互式动画教程 — 用浏览器打开即可运行，无需任何依赖</footer>
+
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const rand=(a,b)=>a+Math.random()*(b-a);
+
+function makeCanvas(id){
+  const c=$(id), x=c.getContext('2d'), r=c.getBoundingClientRect();
+  c.width=c.width; return {c,x,W:c.width,H:c.height};
+}
+
+/* ============ HERO background network ============ */
+(function(){
+  const c=$('heroCanvas'),x=c.getContext('2d');
+  let W,H,nodes=[];
+  function init(){
+    W=c.width=c.offsetWidth;H=c.height=c.offsetHeight;
+    nodes=[];
+    const layers=[3,4,4,3];
+    for(let l=0;l<layers.length;l++){
+      const lx=W*(0.2+l*0.2);
+      for(let i=0;i<layers[l];i++){
+        nodes.push({x:lx+rand(-20,20),y:H*(0.2+i*0.2)+rand(-30,30),r:3,ph:rand(0,6.28),layer:l});
+      }
+    }
+  }
+  init();window.addEventListener('resize',init);
+  let t=0;
+  function loop(){
+    t+=0.02;x.clearRect(0,0,W,H);
+    const nl=nodes.filter(n=>n.layer===0).length;
+    for(let a of nodes)for(let b of nodes){
+      if(b.layer===a.layer+1){
+        x.beginPath();x.moveTo(a.x,a.y);x.lineTo(b.x,b.y);
+        x.strokeStyle=`rgba(56,189,248,${0.05+0.05*Math.sin(t+a.x+b.y)})`;x.lineWidth=.5;x.stroke();
+      }
+    }
+    for(let n of nodes){
+      const tw=0.6+0.4*Math.sin(t*1.5+n.ph);
+      x.beginPath();x.arc(n.x,n.y,n.r,0,6.28);
+      x.fillStyle=`rgba(167,139,250,${0.3+0.4*tw})`;x.fill();
+    }
+    // pulses
+    if(Math.random()<0.15){
+      const a=nodes[Math.floor(Math.random()*nodes.length)];
+      const nexts=nodes.filter(n=>n.layer===a.layer+1);
+      if(nexts.length){
+        const b=nexts[Math.floor(Math.random()*nexts.length)];
+        x.beginPath();x.arc((a.x+b.x)/2,(a.y+b.y)/2,2,0,6.28);
+        x.fillStyle='#34d399';x.fill();
+      }
+    }
+    requestAnimationFrame(loop);
+  }
+  loop();
+})();
+
+/* ============ S1 生物神经元 ============ */
+(function(){
+  const {c,x,W,H}=makeCanvas('c1');
+  let t=0;const cx=W*0.4,cy=H/2;
+  const dend=[];
+  for(let i=0;i<9;i++)dend.push({a:-2.6+i*0.62,l:110+rand(-20,40)});
+  function loop(){
+    t+=0.02;x.clearRect(0,0,W,H);
+    // axon
+    x.beginPath();x.moveTo(cx+50,cy);x.lineTo(W*0.78,cy);
+    x.strokeStyle='#a78bfa';x.lineWidth=3;x.stroke();
+    x.beginPath();x.moveTo(W*0.78,cy);x.lineTo(W*0.82,cy);x.lineTo(W*0.8,cy-6);
+    x.moveTo(W*0.82,cy);x.lineTo(W*0.8,cy+6);x.strokeStyle='#a78bfa';x.lineWidth=2;x.stroke();
+    x.fillStyle='#5c6a85';x.font='13px sans-serif';x.textAlign='center';
+    x.fillText('轴突 Axon',W*0.8,cy-16);
+    // dendrites
+    for(let i=0;i<dend.length;i++){
+      const d=dend[i];
+      const ex=cx+Math.cos(d.a)*d.l, ey=cy+Math.sin(d.a)*d.l;
+      const wob=Math.sin(t*1.5+i)*6;
+      x.beginPath();x.moveTo(cx+Math.cos(d.a)*48,cy+Math.sin(d.a)*48);
+      x.quadraticCurveTo(cx+Math.cos(d.a)*d.l*0.55+wob,cy+Math.sin(d.a)*d.l*0.55,ex,ey);
+      x.strokeStyle=`rgba(56,189,248,${0.35+0.3*Math.sin(t*2+i)})`;x.lineWidth=2;x.stroke();
+      // incoming signals
+      const sp=(t*0.9+i*0.13)%1;
+      const sx=cx+Math.cos(d.a)*48+(ex-cx-Math.cos(d.a)*48)*sp;
+      const sy=cy+Math.sin(d.a)*48+(ey-cy-Math.sin(d.a)*48)*sp;
+      x.beginPath();x.arc(sx,sy,2.5,0,6.28);x.fillStyle='#38bdf8';x.fill();
+    }
+    // cell body
+    const p=0.7+0.3*Math.sin(t*2.2);
+    const g=x.createRadialGradient(cx,cy,0,cx,cy,52);
+    g.addColorStop(0,`rgba(52,211,153,${0.75*p})`);g.addColorStop(1,'rgba(20,60,50,0.6)');
+    x.beginPath();x.arc(cx,cy,48,0,6.28);x.fillStyle=g;x.fill();
+    x.strokeStyle='#34d399';x.lineWidth=2;x.stroke();
+    x.fillStyle='#fff';x.font='bold 14px sans-serif';x.textAlign='center';x.textBaseline='middle';
+    x.fillText('细胞体',cx,cy-6);
+    x.fillStyle='#5c6a85';x.font='12px sans-serif';x.fillText('求和 → 阈值判断',cx,cy+18);
+    // labels
+    x.fillStyle='#38bdf8';x.font='13px sans-serif';x.textAlign='center';x.textBaseline='alphabetic';
+    x.fillText('树突 Dendrites (输入)',cx-40,cy-70);
+    // output pulse
+    if(Math.random()<0.05){
+      const op=(t*0.7)%1;
+      const ox=cx+50+(W*0.78-cx-50)*op;
+      x.beginPath();x.arc(ox,cy,3,0,6.28);x.fillStyle='#a78bfa';x.fill();
+    }
+    requestAnimationFrame(loop);
+  }
+  loop();
+})();
+
+/* ============ S2 感知机 ============ */
+(function(){
+  const {c,x,W,H}=makeCanvas('c2');
+  let t=0;
+  const ins=[{x:W*0.2,y:H*0.28,l:'x₁',v:0.8,w:0.6},{x:W*0.2,y:H*0.5,l:'x₂',v:0.5,w:-0.4},{x:W*0.2,y:H*0.72,l:'x₃',v:0.3,w:0.9}];
+  const sx=W*0.55,sy=H*0.5,ax=W*0.78,b=0.2;
+  function sig(v){return 1/(1+Math.exp(-v))}
+  function loop(){
+    t+=0.02;x.clearRect(0,0,W,H);
+    const z=ins.reduce((s,i)=>s+i.v*i.w,0)+b;
+    const y=sig(z);
+    // connections
+    ins.forEach(i=>{
+      x.beginPath();x.moveTo(i.x+24,i.y);x.lineTo(sx-26,sy);
+      x.strokeStyle=`rgba(56,189,248,${0.3+Math.abs(i.w)*0.4})`;x.lineWidth=1+Math.abs(i.w)*2;x.stroke();
+      x.fillStyle='#5c6a85';x.font='12px monospace';x.textAlign='center';
+      x.fillText('w='+i.w,(i.x+24+sx-26)/2,(i.y+sy)/2-8);
+    });
+    // inputs
+    ins.forEach(i=>{
+      x.beginPath();x.arc(i.x,i.y,22,0,6.28);x.fillStyle='#0e1426';x.fill();
+      x.strokeStyle='#38bdf8';x.lineWidth=1.5;x.stroke();
+      x.fillStyle='#fff';x.font='bold 12px monospace';x.textAlign='center';x.textBaseline='middle';x.fillText(i.l,i.x,i.y);
+    });
+    x.textBaseline='alphabetic';
+    // sum neuron
+    const g=x.createRadialGradient(sx,sy,0,sx,sy,30);
+    g.addColorStop(0,'rgba(167,139,250,0.9)');g.addColorStop(1,'rgba(50,35,110,0.8)');
+    x.beginPath();x.arc(sx,sy,28,0,6.28);x.fillStyle=g;x.fill();x.strokeStyle='#a78bfa';x.lineWidth=2;x.stroke();
+    x.fillStyle='#fff';x.font='bold 12px monospace';x.textAlign='center';x.textBaseline='middle';x.fillText('Σ + b',sx,sy);
+    x.textBaseline='alphabetic';
+    // sigmoid neuron
+    x.beginPath();x.arc(ax,sy,28,0,6.28);x.fillStyle='#0e1426';x.fill();x.strokeStyle='#f472b6';x.lineWidth=2;x.stroke();
+    x.fillStyle='#f472b6';x.font='bold 12px monospace';x.textAlign='center';x.textBaseline='middle';x.fillText('f',ax,sy);
+    x.textBaseline='alphabetic';
+    // arrow sum->sigmoid
+    x.beginPath();x.moveTo(sx+28,sy);x.lineTo(ax-28,sy);x.setLineDash([4,4]);x.strokeStyle='#a78bfa';x.lineWidth=2;x.stroke();x.setLineDash([]);
+    // output
+    x.beginPath();x.moveTo(ax+28,sy);x.lineTo(ax+70,sy);x.strokeStyle='#f472b6';x.lineWidth=2;x.stroke();
+    x.fillStyle='#34d399';x.font='bold 15px monospace';x.textAlign='left';
+    x.fillText(`y = ${y.toFixed(4)}`,ax+76,sy+5);
+    x.fillStyle='#5c6a85';x.font='12px monospace';x.textAlign='center';
+    x.fillText(`z = ${z.toFixed(2)}`,sx,sy+46);
+    x.fillText(`b = ${b}`,sx+46,sy+14);
+    // pulses
+    if(Math.random()<0.06){
+      ins.forEach(i=>{
+        const p=(t*0.5)%1;
+        x.beginPath();x.arc(i.x+24+(sx-26-i.x-24)*p,i.y+(sy-i.y)*p,3,0,6.28);x.fillStyle='#fbbf24';x.fill();
+      });
+    }
+    requestAnimationFrame(loop);
+  }
+  loop();
+})();
+
+/* ============ S3 激活函数 ============ */
+(function(){
+  const {c,x,W,H}=makeCanvas('c3');
+  function sig(v){return 1/(1+Math.exp(-v))}
+  function relu(v){return Math.max(0,v)}
+  function tanhF(v){return Math.tanh(v)}
+  function leaky(v){return v>0?v:0.01*v}
+  const fns=[
+    {f:sig,c:'#34d399',n:'Sigmoid'},{f:tanhF,c:'#a78bfa',n:'Tanh'},
+    {f:relu,c:'#38bdf8',n:'ReLU'},{f:leaky,c:'#fbbf24',n:'Leaky ReLU'}
+  ];
+  function loop(){
+    x.clearRect(0,0,W,H);
+    const gw=W*0.62,gh=H*0.72,gx=W*0.06,gy=H*0.12;
+    // grid
+    x.strokeStyle='#141a30';x.lineWidth=.5;
+    for(let i=-6;i<=6;i++){
+      const sx=gx+(i+6)/12*gw;
+      x.beginPath();x.moveTo(sx,gy);x.lineTo(sx,gy+gh);x.stroke();
+    }
+    // axes
+    x.strokeStyle='#2a3355';x.lineWidth=1;
+    x.beginPath();x.moveTo(gx,gy+gh/2);x.lineTo(gx+gw,gy+gh/2);x.stroke();
+    x.beginPath();x.moveTo(gx+gw/2,gy);x.lineTo(gx+gw/2,gy+gh);x.stroke();
+    x.fillStyle='#5c6a85';x.font='10px monospace';x.textAlign='center';
+    x.fillText('-6',gx+4,gy+gh/2+14);x.fillText('6',gx+gw-4,gy+gh/2+14);
+    x.fillText('1',gx+gw/2-10,gy+10);x.fillText('-1',gx+gw/2-12,gy+gh-4);
+    x.fillText('0',gx+gw/2-10,gy+gh/2+14);
+    const ax=parseFloat($('actX').value);$('actXv').textContent=ax.toFixed(2);
+    const sx=gx+(ax+6)/12*gw;
+    // vertical line
+    x.setLineDash([3,3]);x.strokeStyle='rgba(255,255,255,0.15)';x.beginPath();x.moveTo(sx,gy);x.lineTo(sx,gy+gh);x.stroke();x.setLineDash([]);
+    // curves
+    fns.forEach(({f,c})=>{
+      x.beginPath();x.strokeStyle=c;x.lineWidth=2.5;
+      for(let px=0;px<=gw;px+=2){
+        const xv=px/gw*12-6,yv=f(xv);
+        const sy=gy+gh/2-yv/1.6*(gh/2);
+        px===0?x.moveTo(gx+px,sy):x.lineTo(gx+px,sy);
+      }
+      x.stroke();
+      const yv=f(ax),sy=gy+gh/2-yv/1.6*(gh/2);
+      x.beginPath();x.arc(sx,sy,5,0,6.28);x.fillStyle=c;x.fill();
+      x.fillStyle='#fff';x.font='bold 10px monospace';x.fillText(yv.toFixed(2),sx,sy-12);
+    });
+    // legend
+    const ly=gy+gh+30;
+    fns.forEach(({c,n},i)=>{
+      const lx=W*0.5-140+i*100;
+      x.fillStyle=c;x.beginPath();x.arc(lx,ly,5,0,6.28);x.fill();
+      x.fillStyle='#aab';x.font='12px sans-serif';x.textAlign='left';x.fillText(n,lx+10,ly+4);
+    });
+    requestAnimationFrame(loop);
+  }
+  $('actX').addEventListener('input',()=>{});
+  loop();
+})();
+
+/* ============ S4 网络结构 ============ */
+(function(){
+  const {c,x,W,H}=makeCanvas('c4');
+  let t=0;
+  function loop(){
+    t+=0.02;x.clearRect(0,0,W,H);
+    const hn=parseInt($('hiddenN').value),hl=parseInt($('hiddenL').value);
+    $('hiddenNv').textContent=hn;$('hiddenLv').textContent=hl;
+    const layers=[3];for(let i=0;i<hl;i++)layers.push(hn);layers.push(2);
+    const total=layers.length;
+    const lx=layers.map((_,i)=>W*0.12+i*(W*0.76/(total-1)));
+    const nodes=layers.map((n,l)=>Array.from({length:n},(_,i)=>({x:lx[l],y:H/2+(i-(n-1)/2)*(Math.min(70,420/Math.max(hn,1)))})));
+    // connections
+    for(let l=0;l<total-1;l++)
+      for(const a of nodes[l])for(const b of nodes[l+1]){
+        x.beginPath();x.moveTo(a.x+20,a.y);x.lineTo(b.x-20,b.y);
+        x.strokeStyle='rgba(80,95,140,0.22)';x.lineWidth=1;x.stroke();
+      }
+    // neurons
+    const lbls=[];
+    lbls.push(['x₁','x₂','x₃']);
+    for(let l=1;l<total-1;l++)lbls.push(nodes[l].map((_,i)=>'h'+i));
+    lbls.push(['ŷ₁','ŷ₂']);
+    nodes.forEach((layer,l)=>layer.forEach((n,i)=>{
+      const g=0.35+0.65*Math.abs(Math.sin(t*1.5+l+i));
+      const grad=x.createRadialGradient(n.x-3,n.y-3,0,n.x,n.y,20);
+      grad.addColorStop(0,`rgba(167,139,250,${0.5+g*0.4})`);grad.addColorStop(1,'rgba(45,30,100,0.9)');
+      x.beginPath();x.arc(n.x,n.y,18,0,6.28);x.fillStyle=grad;x.fill();
+      x.strokeStyle=`rgba(52,211,153,${0.3+g*0.5})`;x.lineWidth=1.5;x.stroke();
+      x.fillStyle='#fff';x.font='10px monospace';x.textAlign='center';x.textBaseline='middle';
+      x.fillText(lbls[l][i],n.x,n.y);
+    }));
+    x.textBaseline='alphabetic';
+    // layer labels
+    const names=['输入层'];[...Array(hl)].forEach((_,i)=>names.push('隐藏层'+(hl>1?i+1:'')));names.push('输出层');
+    names.forEach((n,i)=>{
+      x.fillStyle='#5c6a85';x.font='12px sans-serif';x.textAlign='center';x.fillText(n,lx[i],H-12);
+    });
+    // pulses
+    if(Math.random()<0.04)
+      for(const a of nodes[0])for(const b of nodes[1]){
+        const p=(t*0.4)%1;
+        x.beginPath();x.arc(a.x+20+(b.x-20-a.x-20)*p,a.y+(b.y-a.y)*p,2.5,0,6.28);x.fillStyle='#38bdf8';x.fill();
+      }
+    requestAnimationFrame(loop);
+  }
+  loop();
+})();
+
+/* ============ S5 前向传播 ============ */
+(function(){
+  const {c,x,W,H}=makeCanvas('c5');
+  let t=0;
+  const layers=[3,4,4,2];
+  function loop(){
+    t+=0.02;x.clearRect(0,0,W,H);
+    const total=layers.length;
+    const lx=layers.map((_,i)=>W*0.1+i*(W*0.8/(total-1)));
+    const nodes=layers.map((n,l)=>Array.from({length:n},(_,i)=>({x:lx[l],y:H/2+(i-(n-1)/2)*75})));
+    // connections with flowing energy
+    for(let l=0;l<total-1;l++)
+      for(const a of nodes[l])for(const b of nodes[l+1]){
+        x.beginPath();x.moveTo(a.x+20,a.y);x.lineTo(b.x-20,b.y);
+        x.strokeStyle='rgba(80,95,140,0.25)';x.lineWidth=1.2;x.stroke();
+      }
+    // flowing pulse wave
+    for(let l=0;l<total-1;l++){
+      const ph=(t*0.9 - l*0.6)%1;
+      for(const a of nodes[l])for(const b of nodes[l+1]){
+        const p=ph;
+        if(p<0||p>1)continue;
+        x.beginPath();x.arc(a.x+20+(b.x-20-a.x-20)*p,a.y+(b.y-a.y)*p,3,0,6.28);
+        x.fillStyle='rgba(56,189,248,0.8)';x.fill();
+      }
+    }
+    // neurons with activation
+    const lbls=[['x₁','x₂','x₃'],['h₁','h₂','h₃','h₄'],['h₁','h₂','h₃','h₄'],['ŷ₁','ŷ₂']];
+    nodes.forEach((layer,l)=>layer.forEach((n,i)=>{
+      const act=Math.abs(Math.sin(t*1.3+l*1.7+i));
+      const g=x.createRadialGradient(n.x-3,n.y-3,0,n.x,n.y,20);
+      g.addColorStop(0,`rgba(52,211,153,${0.3+act*0.55})`);g.addColorStop(1,'rgba(30,50,90,0.9)');
+      x.beginPath();x.arc(n.x,n.y,18,0,6.28);x.fillStyle=g;x.fill();
+      x.strokeStyle=`rgba(52,211,153,${0.3+act*0.5})`;x.lineWidth=1.5;x.stroke();
+      x.fillStyle='#fff';x.font='10px monospace';x.textAlign='center';x.textBaseline='middle';
+      x.fillText(lbls[l][i],n.x,n.y);
+    }));
+    x.textBaseline='alphabetic';
+    ['输入层','隐藏层1','隐藏层2','输出层'].forEach((n,i)=>{
+      x.fillStyle='#5c6a85';x.font='12px sans-serif';x.textAlign='center';x.fillText(n,lx[i],H-12);
+    });
+    requestAnimationFrame(loop);
+  }
+  loop();
+})();
+
+/* ============ S6 损失函数 ============ */
+(function(){
+  const {c,x,W,H}=makeCanvas('c6');
+  let t=0;
+  function loop(){
+    t+=0.02;x.clearRect(0,0,W,H);
+    const gw=W*0.55,gh=H*0.78,gx=W*0.05,gy=H*0.1;
+    // surface (2D parabola with noise)
+    x.beginPath();
+    for(let px=0;px<=gw;px++){
+      const xv=px/gw*2-1;
+      const yv=xv*xv;
+      const sy=gy+gh-yv*gh*0.85;
+      px===0?x.moveTo(gx+px,sy):x.lineTo(gx+px,sy);
+    }
+    x.strokeStyle='#fbbf24';x.lineWidth=2.5;x.stroke();
+    x.lineTo(gx+gw,gy+gh);x.lineTo(gx,gy+gh);x.closePath();
+    const fg=x.createLinearGradient(gx,gy,gx,gy+gh);
+    fg.addColorStop(0,'rgba(251,191,36,0.15)');fg.addColorStop(1,'rgba(251,191,36,0)');
+    x.fillStyle=fg;x.fill();
+    // axes
+    x.strokeStyle='#2a3355';x.lineWidth=1;
+    x.beginPath();x.moveTo(gx,gy+gh);x.lineTo(gx+gw,gy+gh);x.stroke();
+    x.fillStyle='#5c6a85';x.font='11px monospace';x.textAlign='center';
+    x.fillText('参数 w',gx+gw/2,gy+gh+18);
+    x.fillText('损失 L',gx+gw+14,gy);
+    x.fillText('全局最低点',gx+gw/2,gy+8);
+    // ball rolling down
+    const wx=Math.cos(t*0.7)*0.8;
+    const loss=wx*wx;
+    const sx=gx+(wx+1)/2*gw, sy=gy+gh-loss*gh*0.85;
+    // trail
+    for(let i=0;i<6;i++){
+      const tt=t*0.7-i*0.1;
+      const twx=Math.cos(tt)*0.8;
+      x.beginPath();x.arc(gx+(twx+1)/2*gw,gy+gh-twx*twx*gh*0.85,2,0,6.28);
+      x.fillStyle=`rgba(244,114,182,${0.12+i*0.08})`;x.fill();
+    }
+    x.beginPath();x.arc(sx,sy,7,0,6.28);x.fillStyle='#f472b6';x.fill();x.strokeStyle='#fff';x.lineWidth=1.5;x.stroke();
+    x.fillStyle='#fff';x.font='12px monospace';x.textAlign='center';x.fillText(`L=${loss.toFixed(3)}`,sx,sy-14);
+    // info panel
+    const ix=gx+gw+30;
+    x.fillStyle='#0c1120';x.strokeStyle='#1b2340';x.lineWidth=1;
+    x.beginPath();x.roundRect(ix,gy,W-ix-20,150,10);x.fill();x.stroke();
+    x.fillStyle='#fbbf24';x.font='bold 12px monospace';x.textAlign='left';
+    x.fillText('损失函数 L(w)',ix+16,gy+28);
+    x.fillStyle='#aab';x.font='11px monospace';
+    x.fillText('目标: 找到 w 使 L 最小',ix+16,gy+50);
+    x.fillStyle='#f472b6';
+    x.fillText('• 当前 L = '+loss.toFixed(3),ix+16,gy+72);
+    x.fillStyle='#34d399';
+    x.fillText('• 最低点 L = 0',ix+16,gy+92);
+    x.fillStyle='#5c6a85';
+    x.fillText('• 梯度指向 L 上升方向',ix+16,gy+112);
+    x.fillText('• 沿负梯度方向走 → 下山',ix+16,gy+132);
+    requestAnimationFrame(loop);
+  }
+  loop();
+})();
+
+/* ============ S7 反向传播 ============ */
+(function(){
+  const {c,x,W,H}=makeCanvas('c7');
+  let t=0;
+  const layers=[3,4,2];
+  function loop(){
+    t+=0.02;x.clearRect(0,0,W,H);
+    const total=layers.length;
+    const lx=layers.map((_,i)=>W*0.12+i*(W*0.76/(total-1)));
+    const nodes=layers.map((n,l)=>Array.from({length:n},(_,i)=>({x:lx[l],y:H/2+(i-(n-1)/2)*80})));
+    // connections
+    for(let l=0;l<total-1;l++)
+      for(const a of nodes[l])for(const b of nodes[l+1]){
+        x.beginPath();x.moveTo(a.x+20,a.y);x.lineTo(b.x-20,b.y);
+        x.strokeStyle='rgba(80,95,140,0.25)';x.lineWidth=1.2;x.stroke();
+      }
+    // forward pulses (blue)
+    const fp=(t*0.8)%1;
+    for(const a of nodes[0])for(const b of nodes[1]){
+      x.beginPath();x.arc(a.x+20+(b.x-20-a.x-20)*fp,a.y+(b.y-a.y)*fp,3,0,6.28);
+      x.fillStyle='rgba(56,189,248,0.75)';x.fill();
+    }
+    // backward pulses (pink)
+    const bp=(t*0.8)%1;
+    for(const b of nodes[2])for(const a of nodes[1]){
+      const p=1-bp;
+      x.beginPath();x.arc(a.x+20+(b.x-20-a.x-20)*p,a.y+(b.y-a.y)*p,3,0,6.28);
+      x.fillStyle='rgba(244,114,182,0.8)';x.fill();
+    }
+    const bp2=(t*0.8+0.3)%1;
+    for(const a of nodes[1])for(const b of nodes[0]){
+      const p=1-bp2;
+      x.beginPath();x.arc(b.x+20+(a.x-20-b.x-20)*p,b.y+(a.y-b.y)*p,3,0,6.28);
+      x.fillStyle='rgba(244,114,182,0.55)';x.fill();
+    }
+    // neurons
+    const lbls=[['x₁','x₂','x₃'],['h₁','h₂','h₃','h₄'],['ŷ₁','ŷ₂']];
+    nodes.forEach((layer,l)=>layer.forEach((n,i)=>{
+      x.beginPath();x.arc(n.x,n.y,20,0,6.28);x.fillStyle='#0e1426';x.fill();
+      x.strokeStyle=l===2?'#f472b6':'#38bdf8';x.lineWidth=1.5;x.stroke();
+      x.fillStyle='#fff';x.font='10px monospace';x.textAlign='center';x.textBaseline='middle';x.fillText(lbls[l][i],n.x,n.y);
+    }));
+    x.textBaseline='alphabetic';
+    ['输入层','隐藏层','输出层'].forEach((n,i)=>{
+      x.fillStyle='#5c6a85';x.font='12px sans-serif';x.textAlign='center';x.fillText(n,lx[i],H-12);
+    });
+    // legend arrows
+    x.fillStyle='#38bdf8';x.font='bold 14px sans-serif';x.textAlign='center';
+    x.fillText('前向传播 →',W*0.5,H-40);
+    x.fillStyle='#f472b6';x.fillText('← 反向传播 (梯度)',W*0.5,H-20);
+    requestAnimationFrame(loop);
+  }
+  loop();
+})();
+
+/* ============ S8 梯度下降 ============ */
+(function(){
+  const {c,x,W,H}=makeCanvas('c8');
+  let t=0;
+  function lossFn(w){return 0.5*w*w+0.3*Math.sin(w*3)+0.2*Math.cos(w*5)}
+  function grad(w){return w+0.9*Math.cos(w*3)-1*Math.sin(w*5)}
+  function loop(){
+    t+=0.02;x.clearRect(0,0,W,H);
+    const gw=W*0.55,gh=H*0.75,gx=W*0.05,gy=H*0.12;
+    // curve
+    x.beginPath();
+    for(let px=0;px<=gw;px++){
+      const w=px/gw*4-2;
+      const L=lossFn(w);
+      const sy=gy+(L+2.2)/4.6*gh;
+      px===0?x.moveTo(gx+px,sy):x.lineTo(gx+px,sy);
+    }
+    x.strokeStyle='#38bdf8';x.lineWidth=2;x.stroke();
+    x.lineTo(gx+gw,gy+gh);x.lineTo(gx,gy+gh);x.closePath();
+    const fg=x.createLinearGradient(gx,gy,gx,gy+gh);
+    fg.addColorStop(0,'rgba(56,189,248,0.1)');fg.addColorStop(1,'transparent');
+    x.fillStyle=fg;x.fill();
+    x.strokeStyle='#2a3355';x.beginPath();x.moveTo(gx,gy+gh);x.lineTo(gx+gw,gy+gh);x.stroke();
+    x.fillStyle='#5c6a85';x.font='11px monospace';x.textAlign='center';
+    x.fillText('参数空间',gx+gw/2,gy+gh+16);
+
+    const lr=parseFloat($('lr').value);$('lrv').textContent=lr.toFixed(2);
+    // steps
+    let w=-1.8;const steps=[{w,g:grad(w)}];
+    for(let i=0;i<14;i++){w=w-lr*grad(w)*0.25;steps.push({w,g:grad(w)})}
+    // path
+    for(let i=1;i<steps.length;i++){
+      const p=steps[i-1],q=steps[i];
+      const px=gx+(p.w+2)/4*gw, py=gy+(lossFn(p.w)+2.2)/4.6*gh;
+      const qx=gx+(q.w+2)/4*gw, qy=gy+(lossFn(q.w)+2.2)/4.6*gh;
+      x.beginPath();x.moveTo(px,py);x.lineTo(qx,qy);
+      x.strokeStyle=`rgba(52,211,153,${0.25+i*0.05})`;x.lineWidth=1.5;x.stroke();
+    }
+    // current
+    const ci=Math.floor((t*1.2)%steps.length);
+    const cur=steps[ci];
+    const csx=gx+(cur.w+2)/4*gw, csy=gy+(lossFn(cur.w)+2.2)/4.6*gh;
+    x.beginPath();x.arc(csx,csy,7,0,6.28);x.fillStyle='#34d399';x.fill();x.strokeStyle='#fff';x.lineWidth=2;x.stroke();
+    x.fillStyle='#fff';x.font='11px monospace';x.textAlign='center';
+    x.fillText('L='+lossFn(cur.w).toFixed(2),csx,csy-14);
+
+    // info
+    const ix=gx+gw+30;
+    x.fillStyle='#0c1120';x.strokeStyle='#1b2340';x.lineWidth=1;
+    x.beginPath();x.roundRect(ix,gy,W-ix-20,190,10);x.fill();x.stroke();
+    x.fillStyle='#38bdf8';x.font='bold 12px monospace';x.textAlign='left';
+    x.fillText('梯度下降',ix+16,gy+26);
+    x.fillStyle='#aab';x.font='11px monospace';
+    x.fillText('学习率 η = '+lr.toFixed(2),ix+16,gy+48);
+    x.fillText('步数 '+ci+'/'+(steps.length-1),ix+16,gy+68);
+    x.fillText('w = '+cur.w.toFixed(3),ix+16,gy+88);
+    x.fillText('∇L = '+cur.g.toFixed(3),ix+16,gy+108);
+    x.fillStyle='#34d399';
+    x.fillText('w←w−η·∇L = '+(cur.w-lr*cur.g*0.25).toFixed(3),ix+16,gy+128);
+    x.fillStyle='#fbbf24';x.font='12px sans-serif';
+    x.fillText(lr>0.6?'⚠ η 过大 → 震荡/发散':lr<0.06?'⚠ η 过小 → 收敛缓慢':'✓ η 适中',ix+16,gy+160);
+    requestAnimationFrame(loop);
+  }
+  loop();
+})();
+
+/* ============ S9 实时训练 DEMO ============ */
+(function(){
+  const {c,x,W,H}=makeCanvas('c9');
+  // neural network 2-6-1
+  let W1,B1,W2,B2;
+  function initNet(){
+    W1=[];B1=[];for(let j=0;j<6;j++){W1.push([rand(-1,1),rand(-1,1)]);B1.push(rand(-1,1))}
+    W2=[];B2=rand(-1,1);for(let j=0;j<6;j++)W2.push(rand(-1,1));
+  }
+  initNet();
+  // data: two clusters
+  const data=[];
+  function genData(){
+    data.length=0;
+    for(let i=0;i<40;i++){
+      const a=rand(0,Math.PI*2), r=rand(0,1.4);
+      data.push({x:Math.cos(a)*r,y:Math.sin(a)*r,label:0});
+    }
+    for(let i=0;i<40;i++){
+      const a=rand(0,Math.PI*2), r=rand(0,1.4);
+      data.push({x:Math.cos(a)*r+3,y:Math.sin(a)*r+3,label:1});
+    }
+  }
+  genData();
+  // normalize-ish: keep raw coords
+  let paused=false,epoch=0,lossHist=[],acc=0;
+  function forward(px,py){
+    let z=[],a=[];
+    for(let j=0;j<6;j++){z[j]=W1[j][0]*px+W1[j][1]*py+B1[j];a[j]=Math.max(0,z[j])}
+    let z2=B2;for(let j=0;j<6;j++)z2+=W2[j]*a[j];
+    return {z2,a};
+  }
+  function trainStep(){
+    const lr=parseFloat($('lrLive').value);
+    let totalLoss=0;
+    // stochastic: iterate all samples
+    for(const d of data){
+      const px=(d.x-1.5)/2.2, py=(d.y-1.5)/2.2; // center+scale
+      const {z2,a}=forward(px,py);
+      const y=sigmoid(z2);
+      const target=d.label;
+      const loss=-(target*Math.log(y+1e-9)+(1-target)*Math.log(1-y+1e-9));
+      totalLoss+=loss;
+      // backprop
+      const dL=y-target;
+      // W2 grads
+      for(let j=0;j<6;j++){
+        W2[j]-=lr*dL*a[j];
+      }
+      B2-=lr*dL;
+      // hidden grads
+      for(let j=0;j<6;j++){
+        const dz=Math.max(0,a[j]>0?1:0);
+        const dL_da=dL*W2[j];
+        const dL_dz=dL_da*dz;
+        W1[j][0]-=lr*dL_dz*px;
+        W1[j][1]-=lr*dL_dz*py;
+        B1[j]-=lr*dL_dz;
+      }
+    }
+    lossHist.push(totalLoss/data.length);
+    if(lossHist.length>180)lossHist.shift();
+    epoch++;
+    // accuracy
+    let c=0;
+    for(const d of data){
+      const px=(d.x-1.5)/2.2,py=(d.y-1.5)/2.2;
+      const y=sigmoid(forward(px,py).z2);
+      if((y>0.5?1:0)===d.label)c++;
+    }
+    acc=c/data.length;
+  }
+  function sigmoid(v){return 1/(1+Math.exp(-v))}
+
+  const plotX=0,plotW=W*0.62;
+  function toScreen(d){return {sx:plotX+20+(d.x+1)/6*(plotW-40),sy:20+(d.y+1)/6*(H-60)}}
+
+  function loop(){
+    const speed=parseInt($('speed').value);$('speedv').textContent=speed;
+    $('lrLivev').textContent=parseFloat($('lrLive').value).toFixed(2);
+    if(!paused)for(let i=0;i<speed;i++)trainStep();
+    x.clearRect(0,0,W,H);
+    // decision boundary heatmap
+    const res=80;
+    for(let i=0;i<res;i++)for(let j=0;j<res;j++){
+      const ddx=(i/res)*6-1, ddy=(j/res)*6-1;
+      const px=(ddx-1.5)/2.2, py=(ddy-1.5)/2.2;
+      const y=sigmoid(forward(px,py).z2);
+      const sx=plotX+20+(ddx+1)/6*(plotW-40);
+      const sy=20+(ddy+1)/6*(H-60);
+      const cellW=(plotW-40)/res, cellH=(H-60)/res;
+      x.fillStyle=`rgba(${y>0.5?56:244},${y>0.5?189:114},${y>0.5?248:182},${Math.abs(y-0.5)*0.35})`;
+      x.fillRect(sx,sy,cellW+0.5,cellH+0.5);
+    }
+    // border
+    x.strokeStyle='#1b2340';x.lineWidth=1;x.strokeRect(plotX+20,20,plotW-40,H-60);
+    // data points
+    for(const d of data){
+      const {sx,sy}=toScreen(d);
+      x.beginPath();x.arc(sx,sy,4.5,0,6.28);
+      x.fillStyle=d.label? '#f472b6':'#38bdf8';
+      x.fill();
+      x.strokeStyle='rgba(255,255,255,0.3)';x.lineWidth=.5;x.stroke();
+    }
+    // labels
+    x.fillStyle='#fff';x.font='12px sans-serif';x.textAlign='left';
+    x.fillText('分类决策边界',plotX+20,16);
+
+    // ==== loss curve ====
+    const cx0=plotX+plotW+10, cw=W-cx0-20;
+    const ch=H*0.55, cy0=20;
+    x.strokeStyle='#1b2340';x.lineWidth=1;x.strokeRect(cx0,cy0,cw,ch);
+    x.fillStyle='#5c6a85';x.font='11px sans-serif';x.textAlign='left';
+    x.fillText('损失曲线',cx0,cy0-6);
+    if(lossHist.length>1){
+      const maxL=Math.max(...lossHist,0.1);
+      x.beginPath();
+      for(let i=0;i<lossHist.length;i++){
+        const lx=cx0+(i/(lossHist.length-1))*cw;
+        const ly=cy0+ch-(lossHist[i]/maxL)*ch*0.9;
+        i===0?x.moveTo(lx,ly):x.lineTo(lx,ly);
+      }
+      x.strokeStyle='#34d399';x.lineWidth=2;x.stroke();
+      // latest value
+      const lv=lossHist[lossHist.length-1];
+      x.fillStyle='#fff';x.font='11px monospace';x.fillText('L='+lv.toFixed(3),cx0+6,cy0+16);
+    }
+    // ==== stats ====
+    const sy0=cy0+ch+14;
+    x.fillStyle='#0c1120';x.strokeStyle='#1b2340';x.beginPath();
+    x.roundRect(cx0,sy0,cw,H-sy0-20,8);x.fill();x.stroke();
+    x.fillStyle='#aab';x.font='12px monospace';x.textAlign='left';
+    x.fillText('Epoch: '+epoch,cx0+14,sy0+24);
+    x.fillText('准确率: '+(acc*100).toFixed(1)+'%',cx0+14,sy0+46);
+    x.fillStyle='#38bdf8';
+    x.fillText('网络: 2→6→1',cx0+14,sy0+68);
+    x.fillStyle='#5c6a85';
+    x.fillText('ReLU / Sigmoid',cx0+14,sy0+88);
+    requestAnimationFrame(loop);
+  }
+  $('btnReset').onclick=()=>{initNet();genData();epoch=0;lossHist=[];acc=0};
+  $('btnPause').onclick=()=>{paused=!paused;$('btnPause').textContent=paused?'▶ 继续':'⏸ 暂停'};
+  loop();
+})();
+
+/* ============ scroll fade-in ============ */
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('show');io.unobserve(e.target)}}),{threshold:0.15});
+document.querySelectorAll('.fade-in').forEach(el=>io.observe(el));
+</script>
+</body>
+</html>
